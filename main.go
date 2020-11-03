@@ -57,7 +57,7 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Error in godotenv.Load(): %v", err)
+		log.Printf("Error in godotenv.Load(): %v", err)
 	}
 
 	db, err := sql.Open("postgres", os.Getenv("PG_CONNSTRING"))
