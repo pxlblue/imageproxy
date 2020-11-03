@@ -43,14 +43,14 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 		ctx.Done()
 	} else {
 		base := path.Base(requestPath)
-		var url string
-		err := database.QueryRow("SELECT \"url\" FROM pxl.public.\"short_url\" WHERE \"shortId\" = $1", base).Scan(&url)
+		var destination string
+		err := database.QueryRow("SELECT \"destination\" FROM pxl.public.\"short_url\" WHERE \"shortId\" = $1", base).Scan(&destination)
 		if err != nil {
-			ctx.Error(fmt.Sprintf("Short URL not found (error: %v)", err), 404)
+			ctx.Error("Short URL not found", 404)
 			ctx.Done()
 			return
 		}
-		ctx.Redirect(url, 301)
+		ctx.Redirect(destination, 301)
 	}
 }
 
