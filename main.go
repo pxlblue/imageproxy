@@ -28,7 +28,7 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 		// Request file from GCS
 		rc, err := client.Bucket(os.Getenv("STORAGE_BUCKET")).Object(path.Base(requestPath)).NewReader(context.Background())
 		if err != nil {
-			ctx.Error("Image not found", 404)
+			ctx.Error(fmt.Sprintf("Image not found (error: %v)", err), 404)
 			ctx.Done()
 			return
 		}
