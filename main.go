@@ -54,7 +54,6 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 			ctx.Done()
 			return
 		}
-
 		oembed := OEmbed{Type: "link", Version: "1.0", Title: embedTitle, Author: embedAuthorStr}
 		if !embedAuthor {
 			oembed.Author = ""
@@ -83,7 +82,7 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 			ctx.Redirect("https://"+string(ctx.Host())+"/raw/"+base, 301)
 			return
 		}
-		ctx.SetContentType("text/html")
+		ctx.SetContentType("text/html; charset=utf-8")
 		imgURL := fmt.Sprintf("%s/raw/%s", host, base)
 		html := fmt.Sprintf(template, embedDescription, imgURL, embedColor, fmt.Sprintf("%s/%s.json", host, base), imgURL)
 		ctx.SetBody([]byte(html))
