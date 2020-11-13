@@ -27,7 +27,7 @@ type OEmbed struct {
 	Type    string `json:"type"`
 	Version string `json:"version"`
 	Title   string `json:"title"`
-	Author  string `json:"author_name"`
+	Author  string `json:"author_name,omitempty"`
 }
 
 func requestHandler(ctx *fasthttp.RequestCtx) {
@@ -56,7 +56,9 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 		}
 
 		oembed := OEmbed{Type: "link", Version: "1.0", Title: embedTitle, Author: embedAuthorStr}
-
+		if !embedAuthor {
+			oembed.Author = ""
+		}
 		var embedData []byte
 		embedData, err = json.Marshal(oembed)
 		if err != nil {
