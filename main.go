@@ -33,7 +33,7 @@ type OEmbed struct {
 func requestHandler(ctx *fasthttp.RequestCtx) {
 	requestPath := string(ctx.Path())
 	base := path.Base(requestPath)
-	host := "https://" + string(ctx.Host())
+	host := "https://" + string(ctx.Request.Header.Peek("X-Forwarded-Host"))
 
 	if requestPath == "/" {
 		ctx.Redirect("https://pxl.blue/?utm_source=proxy", 301)
