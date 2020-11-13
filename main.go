@@ -64,7 +64,7 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 			log.Fatalf("Error in json.Marshal: %v", err)
 		}
 		ctx.SetBody(embedData)
-		ctx.SetContentType("application/json")
+		ctx.SetContentType("application/json; charset=utf-8")
 		ctx.Done()
 	} else if path.Ext(requestPath) != "" && strings.HasPrefix(base, "em") && !strings.Contains(requestPath, "raw") {
 		var (
