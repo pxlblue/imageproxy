@@ -11,14 +11,15 @@ import (
 	"path"
 	"strings"
 
-	"cloud.google.com/go/storage"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/valyala/fasthttp"
-	"google.golang.org/api/option"
+
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-var client *storage.Client
+var client *minio.Client
 var database *sql.DB
 var template string = "<!DOCTYPE html><html style=\"height:100%%\"><head><meta name=\"viewport\" content=\"width=device-width,minimum-scale=0.1\"><meta name=\"twitter:card\" content=\"summary_large_image\"><meta property=\"og:description\" content=\"%s\"><meta property=\"twitter:image\" content=\"%s\"><meta name=\"theme-color\" content=\"%s\"><link type=\"application/json+oembed\" href=\"%s\"></head><body style=\"margin: 0px;background: #0e0e0e;display:flex;justify-content:center;height:100%%\"><img style=\"-webkit-user-select:none;margin:auto\" src=\"%s\"></body></html>"
 
@@ -89,7 +90,16 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 		ctx.Done()
 	} else if path.Ext(requestPath) != "" {
 		// Request file from GCS
-		rc, err := client.Bucket(os.Getenv("STORAGE_BUCKET")).Object(path.Base(requestPath)).NewReader(context.Background())
+		//rc, err := client.Bucket(os.Getenv("STORAGE_BUCKET")).Object().NewReader(context.Background())
+		filePath := "/" + path.Base(requestPath)
+		objInfo, err := client.StatObject(context.Background(), os.Getenv("STORAGE_BUCKET"), filePath, minio.StatObjectOptions{})
+		if err != nil {
+
+			ctx.Error(fmt.Sprintf("Image not found (stat failed: %v)", err), 404)
+			ctx.Done()
+			return
+		}
+		rc, err := client.GetObject(context.Background(), os.Getenv("STORAGE_BUCKET"), filePath, minio.GetObjectOptions{})
 		if err != nil {
 			ctx.Error("Image not found", 404)
 			ctx.Done()
@@ -102,7 +112,7 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 			ctx.Done()
 			return
 		}
-		ctx.SetContentType(rc.Attrs.ContentType)
+		ctx.SetContentType(objInfo.ContentType)
 
 		ctx.SetBody(data)
 		ctx.Done()
@@ -131,13 +141,19 @@ func main() {
 		log.Fatalf("Error in sql.Open: %v", err)
 	}
 
-	bgCtx := context.Background()
-	gcsClient, err := storage.NewClient(bgCtx, option.WithCredentialsJSON([]byte(os.Getenv("STORAGE_ACCOUNT"))))
+	endpoint := os.Getenv("STORAGE_ENDPOINT")
+	accessKeyID := os.Getenv("STORAGE_ACCESS_KEY")
+	secretAccessKey := os.Getenv("STORAGE_SECRET_KEY")
+	useSSL := true
+	minioClient, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+		Secure: useSSL,
+	})
+
 	if err != nil {
-		log.Fatalf("Error in storage.NewClient: %v", err)
+		log.Fatalf("Error in minio.New: %v", err)
 	}
-	client = gcsClient
-	defer gcsClient.Close()
+	client = minioClient
 
 	handler := fasthttp.CompressHandler(requestHandler)
 
